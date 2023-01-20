@@ -1,8 +1,8 @@
 import os
-import random
 
 import cv2
 from dotenv import load_dotenv
+import nrrd
 import numpy as np
 from pprint import pprint
 import supervisely as sly
@@ -122,6 +122,14 @@ image_np = api.volume.download_slice_np(
 
 print(f"Image downloaded as NumPy array. Image shape: {image_np.shape}")
 
+
+# save slice as nrrd file
+nrrd_slice_path = os.path.join(download_dir_name, 'slice.nrrd')
+nrrd.write(nrrd_slice_path, image_np)
+
+# save slice as jpg
+image_slice_path = os.path.join(download_dir_name, 'slice.jpg')
+cv2.imwrite(image_slice_path, image_np)
 
 # read nrrd file from local directory
 nrrd_path = os.path.join(download_dir_name, "MRHead.nrrd")
