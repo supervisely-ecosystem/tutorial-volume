@@ -29,10 +29,10 @@ print(f"Project ID: {project.id}")
 dataset = api.dataset.create(project.id, "dataset_1")
 print(f"Dataset ID: {dataset.id}")
 
-# prepare nrrd files and place them in local directory ("src/upload/nrrd/")
+# prepare NRRD files and place them in local directory ("src/upload/nrrd/")
 local_path = "src/upload/nrrd/MRHead.nrrd"
 
-# upload 1 nnrd volume as nrrd from local directory to Supervisely platform
+# upload 1 nnrd volume as NRRD from local directory to Supervisely platform
 nrrd_info = api.volume.upload_nrrd_serie_path(
     dataset.id,
     "MRHead.nrrd",
@@ -52,7 +52,7 @@ nrrd_info_np = api.volume.upload_np(
 print(f"Volume uploaded as NumPy array to Supervisely with ID:{nrrd_info_np.id}")
 
 
-# upload list of nrrd files from local directory to Supervisely
+# upload list of NRRD files from local directory to Supervisely
 local_dir_name = "src/upload/nrrd/"
 all_nrrd_names = os.listdir(local_dir_name)
 names = [f"1_{name}" for name in all_nrrd_names]
@@ -123,7 +123,7 @@ image_np = api.volume.download_slice_np(
 print(f"Image downloaded as NumPy array. Image shape: {image_np.shape}")
 
 
-# save slice as nrrd file
+# save slice as NRRD file
 nrrd_slice_path = os.path.join(download_dir_name, 'slice.nrrd')
 nrrd.write(nrrd_slice_path, image_np)
 
@@ -131,7 +131,7 @@ nrrd.write(nrrd_slice_path, image_np)
 image_slice_path = os.path.join(download_dir_name, 'slice.jpg')
 cv2.imwrite(image_slice_path, image_np)
 
-# read nrrd file from local directory
+# read NRRD file from local directory
 nrrd_path = os.path.join(download_dir_name, "MRHead.nrrd")
 volume_np, meta = sly.volume.read_nrrd_serie_volume_np(nrrd_path)
 pprint(meta)
