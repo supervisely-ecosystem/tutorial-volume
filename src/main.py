@@ -2,8 +2,8 @@ import os
 
 import cv2
 from dotenv import load_dotenv
-import nrrd
 import numpy as np
+from pprint import pprint
 import supervisely as sly
 from supervisely.project.project_type import ProjectType
 from supervisely._utils import batched
@@ -34,13 +34,22 @@ print(f"Dataset ID: {dataset.id}")
 upload_path = "src/upload/nrrd/MRHead.nrrd"
 
 # upload 1 nnrd volume as nrrd from local directory to Supervisely platform
-nrrd_info = api.volume.upload_nrrd_serie_path(dataset.id, "MRHead.nrrd", upload_path)
+nrrd_info = api.volume.upload_nrrd_serie_path(
+    dataset.id,
+    "MRHead.nrrd",
+    upload_path,
+)
 print(f'"{nrrd_info.name}" volume uploaded to Supervisely with ID:{nrrd_info.id}')
 
 
 # upload volume as NumPy array to Supervisely platform
 np_volume, meta = sly.volume.read_nrrd_serie_volume_np(upload_path)
-nrrd_info_np = api.volume.upload_np(dataset.id, "MRHead_np.nrrd", np_volume, meta)
+nrrd_info_np = api.volume.upload_np(
+    dataset.id,
+    "MRHead_np.nrrd",
+    np_volume,
+    meta,
+)
 print(f"Volume uploaded as NumPy array to Supervisely with ID:{nrrd_info_np.id}")
 
 
@@ -50,8 +59,8 @@ all_nrrd_names = os.listdir(upload_dir_name)
 names = [f"1_{name}" for name in all_nrrd_names]
 paths = [os.path.join(upload_dir_name, name) for name in all_nrrd_names]
 
-volume_infos = api.volume.upload_nrrd_series_paths(dataset.id, names, paths)
-print(f"All volumes has been uploaded with IDs: {[x.id for x in volume_infos]}")
+infos = api.volume.upload_nrrd_series_paths(dataset.id, names, paths)
+print(f"All volumes has been uploaded with IDs: {[x.id for x in infos]}")
 
 
 # get list of all volumes from current dataset from Supervisely
@@ -106,7 +115,7 @@ if os.path.exists(path):
 # read nrrd file from local directory
 nrrd_path = os.path.join(download_dir_name, "MRHead.nrrd")
 volume_np, meta = sly.volume.read_nrrd_serie_volume_np(nrrd_path)
-
+pprint(meta)
 
 # get all sagittal slices
 sagittal_slices = {}
@@ -118,6 +127,7 @@ for batch in batched(list(range(dimension))):
         pixel_data = volume_np[i, :, :]  # indexes: 0 - sagittal, 1 - coronal, 2 - axial
         sagittal_slices[i] = pixel_data
 
+print(f"{len(sagittal_slices.keys())} slices has been received from current volume")
 
 for i, s in sagittal_slices.items():
     frame = np.array(s, dtype=np.uint8)
