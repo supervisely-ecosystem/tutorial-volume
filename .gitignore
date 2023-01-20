@@ -7,3 +7,4 @@ secret_debug.env
 __pycache__/
 download/
 upload/
+supervisely

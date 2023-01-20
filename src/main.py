@@ -1,12 +1,11 @@
 import os
+import random
 
 import cv2
 from dotenv import load_dotenv
 import numpy as np
 from pprint import pprint
 import supervisely as sly
-from supervisely.project.project_type import ProjectType
-from supervisely._utils import batched
 
 
 load_dotenv("local.env")
@@ -21,7 +20,7 @@ workspace_id = sly.env.workspace_id()
 project = api.project.create(
     workspace_id,
     "Volume tutorial",
-    ProjectType.VOLUMES,
+    sly.ProjectType.VOLUMES,
     change_name_if_conflict=True,
 )
 print(f"Project ID: {project.id}")
@@ -31,19 +30,19 @@ dataset = api.dataset.create(project.id, "dataset_1")
 print(f"Dataset ID: {dataset.id}")
 
 # prepare nrrd files and place them in local directory ("src/upload/nrrd/")
-upload_path = "src/upload/nrrd/MRHead.nrrd"
+local_path = "src/upload/nrrd/MRHead.nrrd"
 
 # upload 1 nnrd volume as nrrd from local directory to Supervisely platform
 nrrd_info = api.volume.upload_nrrd_serie_path(
     dataset.id,
     "MRHead.nrrd",
-    upload_path,
+    local_path,
 )
 print(f'"{nrrd_info.name}" volume uploaded to Supervisely with ID:{nrrd_info.id}')
 
 
 # upload volume as NumPy array to Supervisely platform
-np_volume, meta = sly.volume.read_nrrd_serie_volume_np(upload_path)
+np_volume, meta = sly.volume.read_nrrd_serie_volume_np(local_path)
 nrrd_info_np = api.volume.upload_np(
     dataset.id,
     "MRHead_np.nrrd",
@@ -54,10 +53,10 @@ print(f"Volume uploaded as NumPy array to Supervisely with ID:{nrrd_info_np.id}"
 
 
 # upload list of nrrd files from local directory to Supervisely
-upload_dir_name = "src/upload/nrrd/"
-all_nrrd_names = os.listdir(upload_dir_name)
+local_dir_name = "src/upload/nrrd/"
+all_nrrd_names = os.listdir(local_dir_name)
 names = [f"1_{name}" for name in all_nrrd_names]
-paths = [os.path.join(upload_dir_name, name) for name in all_nrrd_names]
+paths = [os.path.join(local_dir_name, name) for name in all_nrrd_names]
 
 infos = api.volume.upload_nrrd_series_paths(dataset.id, names, paths)
 print(f"All volumes has been uploaded with IDs: {[x.id for x in infos]}")
@@ -112,24 +111,38 @@ if os.path.exists(path):
     print(f"Volume (ID {volume_info.id}) successfully downloaded.")
 
 
+# download slice image by volume ID
+slice_index = 60
+
+image_np = api.volume.download_slice_np(
+    volume_id=volume_id,
+    slice_index=slice_index,
+    plane=sly.Plane.SAGITTAL,
+)
+
+print(f"Image downloaded as NumPy array. Image shape: {image_np.shape}")
+
+
 # read nrrd file from local directory
 nrrd_path = os.path.join(download_dir_name, "MRHead.nrrd")
 volume_np, meta = sly.volume.read_nrrd_serie_volume_np(nrrd_path)
 pprint(meta)
 
-# get all sagittal slices
-sagittal_slices = {}
-dimension = volume_np.shape[0]  # indexes: 0 - sagittal, 1 - coronal, 2 - axial
-for batch in batched(list(range(dimension))):
+# you can get all sagittal/coronal/axial slices
+slices = {}
+dimension = volume_np.shape[0]  # change index: 0 - sagittal, 1 - coronal, 2 - axial
+for batch in sly.batched(list(range(dimension))):
     for i in batch:
         if i >= dimension:
             continue
-        pixel_data = volume_np[i, :, :]  # indexes: 0 - sagittal, 1 - coronal, 2 - axial
-        sagittal_slices[i] = pixel_data
+        pixel_data = volume_np[i, :, :]  # sagittal
+        # pixel_data = volume_np[:, i, :]  # coronal
+        # pixel_data = volume_np[:, :, i]  # axial
+        slices[i] = pixel_data
 
-print(f"{len(sagittal_slices.keys())} slices has been received from current volume")
+print(f"{len(slices.keys())} slices has been received from current volume")
 
-for i, s in sagittal_slices.items():
+for i, s in slices.items():
     frame = np.array(s, dtype=np.uint8)
     cv2.imshow(f"frame #{i}", frame)
     cv2.waitKey(10)
