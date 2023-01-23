@@ -6,7 +6,7 @@ In this tutorial we will focus on working with volumes using Supervisely SDK.
 
 You will learn how to:
 
-1. [upload volume from local directory to Supervisely dataset](#upload-nrrd-format-volume)
+1. [upload volume (NRRD) from local directory to Supervisely dataset](#upload-nrrd-format-volume)
 2. [upload volume to Supervisely as NumPy matrix](#upload-volume-as-numpy-array)
 3. [upload list of volumes from local directory to Supervisely](#upload-list-of-volumes-from-local-directory)
 4. [get list of volume infos](#get-list-of-volumes-infos-from-current-dataset)
@@ -148,6 +148,7 @@ print(f"Dataset ID: {dataset.id}")
 # Dataset ID: 54698
 ```
 
+
 ## Upload volumes from local directory to Supervisely
 
 ### Upload NRRD format volume
@@ -194,6 +195,42 @@ print(f"Volume uploaded as NumPy array to Supervisely with ID:{nrrd_info_np.id}"
 # Volume uploaded as NumPy array to Supervisely with ID:18562982
 ```
 
+### Upload DICOM series from local directory
+
+Inspect you local directory and collect all dicom series.
+**Source code:**
+
+```python
+dicom_dir_name = "src/upload/MRHead_dicom/"
+
+series_infos = sly.volume.inspect_dicom_series(root_dir=dicom_dir_name)
+```
+
+Upload DICOM series from local directory to Supervisely platform
+**Source code:**
+
+```python
+for serie_id, files in series_infos.items():
+    item_path = files[0]
+    name = f"{sly.fs.get_file_name(path=item_path)}.nrrd"
+    dicom_info = api.volume.upload_dicom_serie_paths(
+        dataset_id=dataset.id,
+        name=name,
+        paths=files,
+        anonymize=True,
+    )
+    print(f"DICOM volume has been uploaded to Supervisely with ID: {dicom_info.id}")
+
+```
+
+> Set **`anonymize=True`** if you want to anonymize DICOM series and hide **`PatientID`** and **`PatientName`** fields.
+
+**Output:**
+
+```python
+# DICOM volume has been uploaded to Supervisely with ID: 18630608
+```
+
 ### Upload list of volumes from local directory
 
 **Source code:**
@@ -214,11 +251,13 @@ print(f"All volumes has been uploaded with IDs: {[x.id for x in volume_infos]}")
 # All volumes has been uploaded with IDs: [18630605, 18630606, 18630607]
 ```
 
+<figure><img src="https://user-images.githubusercontent.com/79905215/212952335-d5abd038-e0c9-4ad3-b716-c8658bbba5d5.png" alt=""><figcaption></figcaption></figure>
 
+**Now you can explore and label it in [Supervisely labeling tool](https://dev.supervise.ly/ecosystem/annotation_tools/dicom-labeling-tool)**:
 
+<figure><img src="https://user-images.githubusercontent.com/79905215/212951761-97facd6d-143e-4edc-8568-6c1c63471f99.png" alt=""><figcaption></figcaption></figure>
 
 ## Get volume info from Supervisely
-
 
 ### Get list of volumes infos from current dataset
 
@@ -272,48 +311,6 @@ print(f"Volume name: ", volume_info_by_name.name)
 # Volume name:  NRRD_1.nrrd
 ```
 
-
-
-
-
-### Inspect and upload DICOM series from local directory
-
-**Source code:**
-
-```python
-dicom_dir_name = "src/upload/MRHead_dicom/"
-
-# inspect you local directory and collect all dicom series.
-series_infos = sly.volume.inspect_dicom_series(root_dir=dicom_dir_name)
-
-# upload DICOM series from local directory to Supervisely platform
-for serie_id, files in series_infos.items():
-    item_path = files[0]
-    name = f"{sly.fs.get_file_name(path=item_path)}.nrrd"
-    dicom_info = api.volume.upload_dicom_serie_paths(
-        dataset_id=dataset.id,
-        name=name,
-        paths=files,
-        anonymize=True,
-    )
-    print(f"DICOM volume has been uploaded to Supervisely with ID: {dicom_info.id}")
-
-```
-
-> Set **`anonymize=True`** if you want to anonymize DICOM series and hide **`PatientID`** and **`PatientName`** fields.
-
-**Output:**
-
-```python
-# DICOM volume has been uploaded to Supervisely with ID: 18630608
-```
-
-<figure><img src="https://user-images.githubusercontent.com/79905215/212952335-d5abd038-e0c9-4ad3-b716-c8658bbba5d5.png" alt=""><figcaption></figcaption></figure>
-
-**Now you can explore and label it in [Supervisely labeling tool](https://dev.supervise.ly/ecosystem/annotation_tools/dicom-labeling-tool)**:
-
-<figure><img src="https://user-images.githubusercontent.com/79905215/212951761-97facd6d-143e-4edc-8568-6c1c63471f99.png" alt=""><figcaption></figcaption></figure>
-
 ## Download volume from Supervisely to local directory
 
 **Source code:**
@@ -339,54 +336,6 @@ if os.path.exists(path):
 # Volume (ID 18630603) successfully downloaded.
 ```
 
-
-## Download slice from Supervisely
-
-### Download slice as NumPy from Supervisely by ID
-
-**Source code:**
-
-```python
-slice_index = 60
-
-image_np = api.volume.download_slice_np(
-    volume_id=volume_id,
-    slice_index=slice_index,
-    plane=sly.Plane.SAGITTAL,
-)
-
-print(f"Image downloaded as NumPy array. Image shape: {image_np.shape}")
-```
-
-**Output:**
-
-```python
-# Image downloaded as NumPy array. Image shape: (256, 256, 3)
-```
-
-### Save slice to local directory as NRRD
-
-Recommended way to save slice to preserve image quality (pixel depth)
-
-```python
-# save slice as NRRD file
-nrrd_slice_path = os.path.join(download_dir_name, 'slice.nrrd')
-
-nrrd.write(nrrd_slice_path, image_np)
-```
-### Save slice to local directory as JPG
-
-```python
-# save slice as jpg
-image_slice_path = os.path.join(download_dir_name, 'slice.jpg')
-
-cv2.imwrite(image_slice_path, image_np)
-```
-
-
-
-
-
 ## Get volume slices from local directory
 
 ### Read NRRD file from local directory
@@ -401,7 +350,6 @@ volume_np, meta = sly.volume.read_nrrd_serie_volume_np(nrrd_path)
 
 pprint(meta)
 ```
-
 
 **Output:**
 
@@ -420,7 +368,6 @@ pprint(meta)
 #     'windowWidth': 279.0
 # }
 ```
-
 
 ### Get slices from volume
 
@@ -451,14 +398,55 @@ print(f"{len(slices.keys())} slices has been received from current volume.")
 # 130 slices has been received from current volume.
 ```
 
-### Display slices using OpenCV library
+
+## Download slice from Supervisely
+
+Download slice as NumPy from Supervisely by ID
 
 **Source code:**
 
 ```python
-for i, s in slices.items():
-    frame = np.array(s, dtype=np.uint8)
-    cv2.imshow(f"frame #{i}", frame)
-    cv2.waitKey(10)
-    cv2.destroyAllWindows()
+slice_index = 60
+
+image_np = api.volume.download_slice_np(
+    volume_id=volume_id,
+    slice_index=slice_index,
+    plane=sly.Plane.SAGITTAL,
+)
+
+print(f"Image downloaded as NumPy array. Image shape: {image_np.shape}")
+```
+
+**Output:**
+
+```python
+# Image downloaded as NumPy array. Image shape: (256, 256, 3)
+```
+
+## Save slice to local directory
+
+### Save slice as NRRD
+
+Recommended way to save slice as NRRD file to preserve image quality (pixel depth)
+
+**Source code:**
+
+```python
+# save slice as NRRD file
+save_dir = "src/download/"
+nrrd_slice_path = os.path.join(save_dir, 'slice.nrrd')
+
+sly.image.write(nrrd_slice_path, image_np)
+```
+
+### Save slice as JPG
+
+**Source code:**
+
+```python
+# save slice as jpg
+save_dir = "src/download/"
+image_slice_path = os.path.join(save_dir, 'slice.jpg')
+
+sly.image.write(jpg_slice_path, image_np)
 ```

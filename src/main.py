@@ -1,9 +1,6 @@
 import os
 
-import cv2
 from dotenv import load_dotenv
-import nrrd
-import numpy as np
 from pprint import pprint
 import supervisely as sly
 
@@ -111,26 +108,6 @@ if os.path.exists(path):
     print(f"Volume (ID {volume_info.id}) successfully downloaded.")
 
 
-# download slice image by volume ID
-slice_index = 60
-
-image_np = api.volume.download_slice_np(
-    volume_id=volume_id,
-    slice_index=slice_index,
-    plane=sly.Plane.SAGITTAL,
-)
-
-print(f"Image downloaded as NumPy array. Image shape: {image_np.shape}")
-
-
-# save slice as NRRD file
-nrrd_slice_path = os.path.join(download_dir_name, 'slice.nrrd')
-nrrd.write(nrrd_slice_path, image_np)
-
-# save slice as jpg
-image_slice_path = os.path.join(download_dir_name, 'slice.jpg')
-cv2.imwrite(image_slice_path, image_np)
-
 # read NRRD file from local directory
 nrrd_path = os.path.join(download_dir_name, "MRHead.nrrd")
 volume_np, meta = sly.volume.read_nrrd_serie_volume_np(nrrd_path)
@@ -150,8 +127,24 @@ for batch in sly.batched(list(range(dimension))):
 
 print(f"{len(slices.keys())} slices has been received from current volume")
 
-for i, s in slices.items():
-    frame = np.array(s, dtype=np.uint8)
-    cv2.imshow(f"frame #{i}", frame)
-    cv2.waitKey(10)
-    cv2.destroyAllWindows()
+
+# download slice image by volume ID
+slice_index = 60
+
+image_np = api.volume.download_slice_np(
+    volume_id=volume_id,
+    slice_index=slice_index,
+    plane=sly.Plane.SAGITTAL,
+)
+
+print(f"Image downloaded as NumPy array. Image shape: {image_np.shape}")
+
+
+# save slice as NRRD file
+save_dir = "src/download/"
+nrrd_slice_path = os.path.join(save_dir, "slice.nrrd")
+sly.image.write(nrrd_slice_path, image_np)
+
+# save slice as jpg
+jpg_slice_path = os.path.join(save_dir, "slice.jpg")
+sly.image.write(jpg_slice_path, image_np)
