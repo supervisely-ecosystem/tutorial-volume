@@ -8,23 +8,22 @@ You will learn how to:
 
 1. [upload volume (NRRD) from local directory to Supervisely dataset](#upload-nrrd-format-volume)
 2. [upload volume to Supervisely as NumPy matrix](#upload-volume-as-numpy-array)
-3. [upload list of volumes from local directory to Supervisely](#upload-list-of-volumes-from-local-directory)
-4. [get list of volume infos](#get-list-of-volumes-infos-from-current-dataset)
-5. [get single volume info by id](#get-single-volume-info-by-id)
-6. [get single volume info by name](#get-single-volume-info-by-name)
-7. [upload DICOM series from local directory](#inspect-and-upload-dicom-series-from-local-directory)
+3. [upload DICOM series from local directory](#upload-dicom-series-from-local-directory)
+4. [upload list of volumes from local directory to Supervisely](#upload-list-of-volumes-from-local-directory)
+5. [get list of volume infos](#get-list-of-volumes-infos-from-current-dataset)
+6. [get single volume info by id](#get-single-volume-info-by-id)
+7. [get single volume info by name](#get-single-volume-info-by-name)
 8. [download volume from Supervisely to local directory](#download-volume-from-supervisely-to-local-directory)
-9. [download slice as NumPy from Supervisely by ID](#download-slice-as-numpy-from-supervisely-by-id)
-10. [save slice as NRRD or JPG file](#save-slice-to-local-directory-as-nrrd)
-11. [read NRRD files from local directory](#read-nrrd-file-from-local-directory)
-12. [get volume slices from local directory](#get-slices-from-volume)
-
+9. [read NRRD files from local directory](#read-nrrd-file-from-local-directory)
+10. [get volume slices from local directory](#get-slices-from-volume)
+11. [download slice as NumPy from Supervisely by ID](#download-slice-from-supervisely)
+12. [save slice as NRRD or JPG file](#save-slice-to-local-directory)
 
 📗 Everything you need to reproduce [this tutorial is on GitHub](https://github.com/supervisely-ecosystem/tutorial-volume): source code and demo data.
 
 ## How to debug this tutorial
 
-**Step 1.** Prepare `~/supervisely.env` file with credentials. [Learn more here.](https://github.com/supervisely/developer-portal/blob/main/getting-started/basics-of-authentication.md)
+**Step 1.** Prepare `~/supervisely.env` file with credentials. [Learn more here.](../basics-of-authentication.md)
 
 **Step 2.** Clone [repository](https://github.com/supervisely-ecosystem/tutorial-volume) with source code and demo data and create [Virtual Environment](https://docs.python.org/3/library/venv.html).
 
@@ -45,15 +44,15 @@ code -r .
 **Step 4.** Change workspace ID in `local.env` file by copying the ID from the context menu of the workspace.
 
 ```
-context.workspaceId=654 # ⬅️ change value
+WORKSPACE_ID=654 # ⬅️ change value
 ```
 
 <figure><img src="https://user-images.githubusercontent.com/79905215/209327856-e47fb82b-c207-48fc-bb36-1fe795d45f6f.png" alt=""><figcaption></figcaption></figure>
 
 **Step 5.** Download sample [volumes](https://github.com/supervisely-ecosystem/tutorial-volume/releases/download/v0.0.1/upload.tar.gz)
 
-
 **Step 6.** Place downloaded files in the project structure as shown below:
+
 ```
 tutorial-volume
 ├── .vscode
@@ -82,10 +81,7 @@ tutorial-volume
 ```python
 import os
 
-import cv2
 from dotenv import load_dotenv
-import nrrd
-import numpy as np
 from pprint import pprint
 import supervisely as sly
 ```
@@ -95,15 +91,16 @@ import supervisely as sly
 First, we load environment variables with credentials and init API for communicating with Supervisely Instance.
 
 ```python
-load_dotenv("local.env")
-load_dotenv(os.path.expanduser("~/supervisely.env"))
+if sly.is_development():
+    load_dotenv("local.env")
+    load_dotenv(os.path.expanduser("~/supervisely.env"))
 
 api = sly.Api()
 ```
 
 ### Get variables from environment
 
-In this tutorial, you will need an workspace ID that you can get from environment variables. [Learn more here](https://github.com/supervisely/developer-portal/blob/main/getting-started/environment-variables.md)
+In this tutorial, you will need an workspace ID that you can get from environment variables. [Learn more here](../environment-variables.md#workspace_id)
 
 ```python
 workspace_id = sly.env.workspace_id()
@@ -147,7 +144,6 @@ print(f"Dataset ID: {dataset.id}")
 ```python
 # Dataset ID: 54698
 ```
-
 
 ## Upload volumes from local directory to Supervisely
 
@@ -198,6 +194,7 @@ print(f"Volume uploaded as NumPy array to Supervisely with ID:{nrrd_info_np.id}"
 ### Upload DICOM series from local directory
 
 Inspect you local directory and collect all dicom series.
+
 **Source code:**
 
 ```python
@@ -206,7 +203,8 @@ dicom_dir_name = "src/upload/MRHead_dicom/"
 series_infos = sly.volume.inspect_dicom_series(root_dir=dicom_dir_name)
 ```
 
-Upload DICOM series from local directory to Supervisely platform
+Upload DICOM series from local directory to Supervisely platform.
+
 **Source code:**
 
 ```python
@@ -286,13 +284,13 @@ volume_id = volume_infos[0].id
 
 volume_info_by_id = api.volume.get_info_by_id(id=volume_id)
 
-print(f"Volume name: ", volume_info_by_id.name)
+print(f"Volume name:", volume_info_by_id.name)
 ```
 
 **Output:**
 
 ```python
-# Volume name:  NRRD_1.nrrd
+# Volume name: NRRD_1.nrrd
 ```
 
 ### Get single volume info by name
@@ -302,13 +300,13 @@ print(f"Volume name: ", volume_info_by_id.name)
 ```python
 volume_info_by_name = api.volume.get_info_by_name(dataset.id, name="MRHead.nrrd")
 
-print(f"Volume name: ", volume_info_by_name.name)
+print(f"Volume name:", volume_info_by_name.name)
 ```
 
 **Output:**
 
 ```python
-# Volume name:  NRRD_1.nrrd
+# Volume name: NRRD_1.nrrd
 ```
 
 ## Download volume from Supervisely to local directory
@@ -341,6 +339,7 @@ if os.path.exists(path):
 ### Read NRRD file from local directory
 
 Read NRRD file from local directory and get meta and volume (as NumPy array).
+
 **Source code:**
 
 ```python
@@ -471,4 +470,3 @@ slice_path = os.path.join(save_dir, 'slice.nrrd')
 
 nrrd.write(slice_path, image_np, index_order='C')
 ```
-
